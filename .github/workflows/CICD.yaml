@@ -41,12 +41,21 @@ jobs:
           curl -i localhost:8080/api/ready  
           docker rm -f backend frontend
           docker network rm test-network
+
+      - name: Show GitHub context
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"    
       
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-north-1
+      
+      - name: Test AWS identity
+        run: aws sts get-caller-identity
       
       - name: Login to Amazon ECR
         id: login-ecr
