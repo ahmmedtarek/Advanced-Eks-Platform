@@ -15,51 +15,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # - name: Docker build backend
-      #   run: cd app/backend && docker build -t backend:${{ github.sha }} .
+      - name: Docker build backend
+        run: cd app/backend && docker build -t backend:${{ github.sha }} .
 
-      # - name: Docker build frontend
-      #   run: cd app/frontend && docker build -t frontend:${{ github.sha }} .
+      - name: Docker build frontend
+        run: cd app/frontend && docker build -t frontend:${{ github.sha }} .
 
-      # - name: Scan the image using trivy
-      #   run: |
-      #     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image  --exit-code 0 --severity CRITICAL backend:${{ github.sha }}
-      #     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image  --exit-code 0 --severity CRITICAL frontend:${{ github.sha }}
+      - name: Scan the image using trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image  --exit-code 0 --severity CRITICAL backend:${{ github.sha }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image  --exit-code 0 --severity CRITICAL frontend:${{ github.sha }}
       
-      # - name: test backend & frontend
-      #   run: |
-      #     docker rm -f backend frontend || true
-      #     docker network rm test-network || true
-      #     docker network create test-network
-      #     docker run -d --rm --name backend --network test-network -e DB_HOST=x -e DB_NAME=x -e DB_USER=x -e DB_PASSWORD=x backend:${{ github.sha }}
-      #     sleep 5
-      #     docker run -d --rm --name frontend --network test-network -p 8080:8080 frontend:${{ github.sha }}
-      #     sleep 5
-      #     curl -I localhost:8080/               # 200, Content-Type: text/html
-      #     curl localhost:8080/healthz           # ok
-      #     curl localhost:8080/api/health        # {"status":"ok"}, proves prefix stripping
-      #     curl -i localhost:8080/api/ready  
-      #     docker rm -f backend frontend
-      #     docker network rm test-network
+      - name: test backend & frontend
+        run: |
+          docker rm -f backend frontend || true
+          docker network rm test-network || true
+          docker network create test-network
+          docker run -d --rm --name backend --network test-network -e DB_HOST=x -e DB_NAME=x -e DB_USER=x -e DB_PASSWORD=x backend:${{ github.sha }}
+          sleep 5
+          docker run -d --rm --name frontend --network test-network -p 8080:8080 frontend:${{ github.sha }}
+          sleep 5
+          curl -I localhost:8080/               # 200, Content-Type: text/html
+          curl localhost:8080/healthz           # ok
+          curl localhost:8080/api/health        # {"status":"ok"}, proves prefix stripping
+          curl -i localhost:8080/api/ready  
+          docker rm -f backend frontend
+          docker network rm test-network
 
-      - name: Show GitHub context
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Event: ${{ github.event_name }}"   
-
-      - name: Debug OIDC
-        run: |
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL is set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN is set: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}" 
-      - name: Debug OIDC claims
-        run: |
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
-          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+')
-          while [ $(( ${#PAYLOAD} % 4 )) -ne 0 ]; do PAYLOAD="$PAYLOAD="; done
-          echo "$PAYLOAD" | base64 -d | jq '{iss, sub, aud}'
-      
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
