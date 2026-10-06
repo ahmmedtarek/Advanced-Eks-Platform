@@ -8,6 +8,8 @@ module "backend" {
 
 module "IAM" {
   source = "../../modules/IAM"
+  aws_ecr_repository_frontend_arn = module.ecr.aws_ecr_repository_frontend_arn
+  aws_ecr_repository_backend_arn = module.ecr.aws_ecr_repository_backend_arn
 }
 
 module "eks" {

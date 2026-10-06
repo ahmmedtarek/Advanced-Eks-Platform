@@ -131,8 +131,8 @@ resource "aws_iam_policy" "github_actions_ecr" {
         ]
 
         Resource = [
-          aws_ecr_repository.frontend.arn,
-          aws_ecr_repository.backend.arn
+          var.aws_ecr_repository_frontend_arn,
+          var.aws_ecr_repository_backend_arn
         ]
       }
     ]

@@ -1,0 +1,67 @@
+name: 3-tier application CICD
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Docker build backend
+        run: cd app/backend && docker build -t backend:${{ github.sha }} .
+
+      - name: Docker build frontend
+        run: cd app/frontend && docker build -t frontend:${{ github.sha }} .
+
+      - name: Scan the image using trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image backend:${{ github.sha }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image frontend:${{ github.sha }}
+      
+      - name: test backend & frontend
+        run: |
+          docker rm -f backend frontend || true
+          docker network rm test-network || true
+          docker network create test-network
+          docker run -d --rm --name backend --network test-network -e DB_HOST=x -e DB_NAME=x -e DB_USER=x -e DB_PASSWORD=x backend:${{ github.sha }}
+          docker run -d --rm --name frontend --network test-network -p 8080:8080 frontend:${{ github.sha }}
+          curl -I localhost:8080/               # 200, Content-Type: text/html
+          curl localhost:8080/healthz           # ok
+          curl localhost:8080/api/health        # {"status":"ok"}, proves prefix stripping
+          curl -i localhost:8080/api/ready  
+          docker rm -f backend frontend
+          docker network rm test-network
+      
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-north-1
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag images
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker tag backend:$SHA $REGISTRY/backend:$SHA
+          docker tag frontend:$SHA $REGISTRY/frontend:$SHA
+
+      - name: Push images to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker push $REGISTRY/backend:$SHA
+          docker push $REGISTRY/frontend:$SHA
