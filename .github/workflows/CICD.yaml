@@ -46,7 +46,12 @@ jobs:
         run: |
           echo "Repository: ${{ github.repository }}"
           echo "Ref: ${{ github.ref }}"
-          echo "Event: ${{ github.event_name }}"    
+          echo "Event: ${{ github.event_name }}"   
+
+      - name: Debug OIDC
+        run: |
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL is set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN is set: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}" 
       
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v5
