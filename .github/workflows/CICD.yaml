@@ -32,7 +32,9 @@ jobs:
           docker network rm test-network || true
           docker network create test-network
           docker run -d --rm --name backend --network test-network -e DB_HOST=x -e DB_NAME=x -e DB_USER=x -e DB_PASSWORD=x backend:${{ github.sha }}
+          sleep 5
           docker run -d --rm --name frontend --network test-network -p 8080:8080 frontend:${{ github.sha }}
+          sleep 5
           curl -I localhost:8080/               # 200, Content-Type: text/html
           curl localhost:8080/healthz           # ok
           curl localhost:8080/api/health        # {"status":"ok"}, proves prefix stripping
