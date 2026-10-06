@@ -90,7 +90,7 @@ resource "aws_iam_role" "github_actions" {
         Condition = {
             StringEquals = {
                 "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-                "token.actions.githubusercontent.com:sub" = "repo:ahmmedtarek/Advanced-Eks-Platform:ref:refs/heads/main"
+                "token.actions.githubusercontent.com:sub" = "repo:ahmmedtarek@182046826/Advanced-Eks-Platform@1377328342:ref:refs/heads/main"
             }
         }
       }
