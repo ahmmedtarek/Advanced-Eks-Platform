@@ -5,3 +5,8 @@ variable "aws_ecr_repository_frontend_arn" {
 variable "aws_ecr_repository_backend_arn" {
     type = string
 }
+
+variable "cluster_name" {
+  type    = string
+  default = "devops-eks-cluster"
+}
