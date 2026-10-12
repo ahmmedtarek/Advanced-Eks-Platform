@@ -70,3 +70,29 @@ jobs:
         run: |
           docker push $REGISTRY/backend:$SHA
           docker push $REGISTRY/frontend:$SHA
+
+  update-gitops:
+    needs: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v6
+        with:
+          repository: ahmmedtarek/Advanced-Eks-Gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      
+      - name: Update image tags in GitOps repository
+        run: |
+          cd gitops
+          sed -i "s|image:.*|image: 305018987435.dkr.ecr.eu-north-1.amazonaws.com/backend:${{ github.sha }}|g" k8s/deployments/backend-deployment.yaml
+          sed -i "s|image:.*|image: 305018987435.dkr.ecr.eu-north-1.amazonaws.com/frontend:${{ github.sha }}|g" k8s/deployments/frontend-deployment.yaml
+          git add k8s/deployments/backend-deployment.yaml k8s/deployments/frontend-deployment.yaml
+          git commit -m "Update image tags to ${{ github.sha }}"
+          git push origin main
